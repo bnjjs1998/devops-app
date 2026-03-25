@@ -7,6 +7,7 @@ on:
     branches: [main]
 
 jobs:
+  # Étape 1 : Tests unitaires sur plusieurs versions de Node
   test:
     runs-on: ubuntu-latest
     strategy:
@@ -18,20 +19,25 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
-          cache-dependency-path: app/package-lock.json
-      - run: cd app && npm ci
+          # Correction du chemin ici
+          cache-dependency-path: devops-app/package-lock.json
+      
+      - name: Install dependencies
+        run: cd devops-app && npm ci
+        
       - name: Run tests
         run: |
-          cd app
+          cd devops-app
           set -o pipefail
           npm test 2>&1 | tee test-output.txt
+          
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: test-output-node-${{ matrix.node-version }}
-          path: app/test-output.txt
+          path: devops-app/test-output.txt
 
-  # Étape 2 : On construit l'image Docker (Build)
+  # Étape 2 : Construction de l'image Docker
   build:
     needs: test
     runs-on: ubuntu-latest
@@ -40,13 +46,14 @@ jobs:
       - uses: docker/setup-buildx-action@v3
       - uses: docker/build-push-action@v5
         with:
-          context: ./app
+          # Correction du contexte ici
+          context: ./devops-app
           push: false
           tags: devops-app:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # Étape 3 : On scanne la sécurité (Vérification des failles)
+  # Étape 3 : Scan de sécurité avec Trivy
   security:
     needs: build
     runs-on: ubuntu-latest
@@ -56,16 +63,17 @@ jobs:
         uses: aquasecurity/trivy-action@0.33.1
         with:
           scan-type: 'fs'
-          scan-ref: 'app/'
+          # Correction du dossier à scanner
+          scan-ref: 'devops-app/'
           severity: 'HIGH,CRITICAL'
           exit-code: '1'
           format: 'table'
 
-  # Étape 4 : Le déploiement (simulé ici)
+  # Étape 4 : Déploiement (uniquement sur la branche main)
   deploy:
     needs: [build, security]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - run: echo "Deploying version ${{ github.sha }}..."
+      - run: echo "Déploiement de la version ${{ github.sha }} en cours..."
