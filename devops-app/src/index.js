@@ -79,6 +79,7 @@ function renderMetrics() {
         le: "+Inf"
       })}} ${stats.count}`
     );
+    
     lines.push(
       `http_request_duration_seconds_sum{${formatLabels(labels)}} ${stats.sum.toFixed(6)}`
     );
@@ -120,7 +121,9 @@ const server = http.createServer((req, res) => {
     }
 
     statusCode = 404;
+
     writeJson(res, statusCode, { error: "Not found" });
+
   } catch (error) {
     statusCode = 500;
     writeJson(res, statusCode, {
