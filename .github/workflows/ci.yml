@@ -53,17 +53,17 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # Étape 3 : Scan de sécurité avec Trivy
+# Étape 3 : On scanne la sécurité (Vérification des failles)
   security:
     needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Scan application files
-        uses: aquasecurity/trivy-action@0.33.1
+        # Utilisation d'une version stable existante
+        uses: aquasecurity/trivy-action@master 
         with:
           scan-type: 'fs'
-          # Correction du dossier à scanner
           scan-ref: 'devops-app/'
           severity: 'HIGH,CRITICAL'
           exit-code: '1'
